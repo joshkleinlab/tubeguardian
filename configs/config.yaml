@@ -1,0 +1,5 @@
+YOUR_CHANNEL_ID: "YOUR_CHANNEL_ID"
+channel_size: 50
+log_dir: "./logs"
+credentials_file: "configs/credentials.json"
+banned_words_file: "configs/banned_words.txt"
