@@ -9,16 +9,67 @@ It filters out spam, toxic, or unwanted comments based on a keyword list and hid
 - ✅ **Safe authentication** – uses Google OAuth2 for YouTube API access  
 - ✅ **Cross-platform** – supports Windows, macOS, and Linux  
 
-## 🔑 Configuration
-TubeGuardian reads settings from a **YAML config file** (`configs/config.yaml`):
+## 🛠️ TubeGuardian Installation Guide
+TubeGuardian is a lightweight CLI tool that helps YouTube creators automatically filter spam, scams, and toxic comments.
 
+Follow this guide to install and set it up.
+
+### 📦 1. Download TubeGuardian
+- Go to the Releases page
+- Download the binary for your system:
+```
+tubeguardian-windows-amd64.exe → Windows
+tubeguardian-darwin-arm64 → macOS (Apple Silicon)
+tubeguardian-linux-amd64 → Linux
+```
+Move the file into a folder (e.g., ~/tubeguardian)
+
+### ⚙️ 2. Setup Configs
+Inside the project folder, create a configs/ directory with these files:
 ```yaml
-channel_id: "YOUR_CHANNEL_ID"
-channel_size: 50
-log_dir: "configs/logs"
+CHANNEL_ID: "YOUR_CHANNEL_ID"
+MODE_RATION: "heldForReview"
+LOG_DIR: "./logs"
+CREDENTIALS_FILE: "configs/credentials.json"
+BANNED_WORDS_FILE: "configs/banned_words.txt"
 
 You can also place your keyword list in configs/banned_words.txt.
+
+credentials.json
+Download this file from the Google Cloud Console (OAuth2 client secret).
 ```
+
+### 🔑 3. Authenticate with YouTube
+On first run, TubeGuardian will:
+- Open a browser window → Google OAuth2 login
+- Ask for permissions (youtube.force-ssl)
+- Save your token at:
+```
+Linux/macOS → ./configs/token.json
+Windows → ./configs/token.json
+```
+This step is only required once.
+
+### ▶️ 4. Run TubeGuardian
+Run the binary from the command line:
+Windows
+```
+./tubeguardian-windows-amd64.exe
+```
+macOS/Linux
+`
+./tubeguardian-linux-amd64
+
+`
+The program will:
+📥 First run → fetch all past comments & filter them
+🔄 Every 5 minutes → fetch latest comments & auto-hide spam
+Logs are stored in logs/.
+
+### 🧪 5. Verify
+Check your YouTube Studio → Comments → Held for review.
+You should see spam/toxic comments hidden automatically.
+
 
 ## 📖 Usage
 - On first run: TubeGuardian performs a full scan of all comments.

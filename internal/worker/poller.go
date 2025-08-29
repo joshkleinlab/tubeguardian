@@ -25,72 +25,63 @@ func NewPoller(client *youtube.Client, f *filter.Matcher, cfg *config.Config) *P
 // Run starts periodic comment fetching and filtering
 func (p *Poller) Run(ctx context.Context) {
 	log.Println("🚀 TubeGuardian started. Press Ctrl+C to stop.")
+	state := p.client.LoadState()
+
+	// If first run → do a full backfill once
+	if state.Mode == "init" {
+		log.Println("📥 First run → Performing full backfill...")
+		if err := p.client.FetchAllComments(ctx); err != nil {
+			log.Printf("❌ Backfill failed: %v", err)
+		}
+		_ = p.client.SaveState(youtube.State{
+			Mode:   "backfillDone",
+			LastID: "", // will be updated as comments stream
+		})
+	}
+
+	// Start comment consumer
+	go p.consumeComments(ctx)
+
+	// Poll new comments every 5 minutes
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
 
 	for {
 		select {
 		case <-ctx.Done():
-			log.Println("🛑 Stopping poller...")
+			log.Println("🛑 Poller stopped.")
 			return
-		default:
-			p.processComments(ctx)
-			time.Sleep(5 * time.Minute)
+		case <-ticker.C:
+			log.Println("🔄 Fetching latest comments...")
+			if err := p.client.FetchLatestComments(ctx, 50); err != nil {
+				log.Printf("❌ Failed to fetch latest comments: %v", err)
+			}
 		}
 	}
 }
 
-// processComments fetches and filters comments
-func (p *Poller) processComments(ctx context.Context) {
-	var comments []youtube.Comment
-	var err error
+// consumeComments
+func (p *Poller) consumeComments(ctx context.Context) {
+	for {
+		select {
+		case <-ctx.Done():
+			return
+		case c := <-p.client.Out:
+			matches := p.f.Match(c.Text)
+			if len(matches) > 0 {
+				log.Printf("🚫 Blocked [%s]: \"%s\" | matches: %v", c.ID, c.Text, matches)
+				if err := p.client.HideComments(ctx, []string{c.ID}, p.cfg.ModeRation); err != nil {
+					log.Printf("❌ Failed to hide comment %s: %v", c.ID, err)
+				} else {
+					log.Printf("✅ Hidden comment %s", c.ID)
+				}
+			}
 
-	state := p.client.LoadState()
-
-	if state.Mode == "init" {
-		// First run → backfill
-		log.Println("📥 First run detected → Performing full backfill scan of channel comments...")
-		comments, err = p.client.FetchAllComments(ctx)
-
-		if err == nil && len(comments) > 0 {
-			newLastID := comments[0].ID
-			p.client.SaveState(youtube.State{
+			// Save latest ID
+			_ = p.client.SaveState(youtube.State{
 				Mode:   "backfillDone",
-				LastID: newLastID,
+				LastID: c.ID,
 			})
-			log.Printf("📌 Backfill completed. Last ID saved: %s\n", newLastID)
 		}
-	} else {
-		// Incremental mode
-		log.Println("🔄 Incremental mode → Fetching latest comments...")
-		comments, err = p.client.FetchLatestComments(ctx, 50)
-	}
-
-	// if err != nil {
-	// 	log.Printf("❌ Failed to fetch comments: %v\n", err)
-	// 	return
-	// }
-
-	if len(comments) == 0 {
-		log.Println("✅ No new comments found.")
-		return
-	}
-
-	log.Printf("📌 Processing %d comments...\n", len(comments))
-	var toHide []string
-	for _, c := range comments {
-		matches := p.f.Match(c.Text)
-		if len(matches) > 0 {
-			log.Printf("🚫 Blocked comment [%s]: \"%s\" | matches: %v\n", c.ID, c.Text, matches)
-			toHide = append(toHide, c.ID)
-		}
-	}
-
-	if len(toHide) > 0 {
-		if err := p.client.HideComments(ctx, toHide); err != nil {
-			log.Printf("❌ Failed to hide comments: %v", err)
-		} else {
-			log.Printf("✅ Hidden %d comments.", len(toHide))
-		}
-	} else {
-		log.Println("👍 No banned keywords detected.")
 	}
 }

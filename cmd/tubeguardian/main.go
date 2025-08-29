@@ -28,7 +28,7 @@ func main() {
 
 	// Initialize YouTube client
 	ctx := context.Background()
-	client, err := youtube.NewClient(ctx, cfg.YourChannelID, "configs/credentials.json")
+	client, err := youtube.NewClient(ctx, cfg.ChannelID, "configs/credentials.json")
 	if err != nil {
 		log.Fatalf("❌ Failed to create YouTube client: %v", err)
 	}

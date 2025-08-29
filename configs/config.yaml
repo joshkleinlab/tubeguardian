@@ -1,5 +1,5 @@
-YOUR_CHANNEL_ID: "YOUR_CHANNEL_ID"
-channel_size: 50
-log_dir: "./logs"
-credentials_file: "configs/credentials.json"
-banned_words_file: "configs/banned_words.txt"
+CHANNEL_ID: "YOUR_CHANNEL_ID"
+MODE_RATION: "heldForReview"
+LOG_DIR: "./logs"
+CREDENTIALS_FILE: "configs/credentials.json"
+BANNED_WORDS_FILE: "configs/banned_words.txt"

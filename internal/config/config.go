@@ -10,11 +10,11 @@ import (
 
 // Config holds user configuration from config.yaml
 type Config struct {
-	YourChannelID   string `yaml:"YOUR_CHANNEL_ID"`
-	ChannelSize     int64  `yaml:"channel_size"`
-	LogDir          string `yaml:"log_dir"`
-	CredentialsFile string `yaml:"credentials_file"`
-	BannedWordsFile string `yaml:"banned_words_file"` // optional, default fallback
+	ChannelID       string `yaml:"CHANNEL_ID"`
+	ModeRation      string `yaml:"MODE_RATION"`
+	LogDir          string `yaml:"LOG_DIR"`
+	CredentialsFile string `yaml:"CREDENTIALS_FILE"`
+	BannedWordsFile string `yaml:"BANNED_WORDS_FILE"` // optional, default fallback
 }
 
 // LoadConfig reads config.yaml into Config struct
